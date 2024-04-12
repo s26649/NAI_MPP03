@@ -2,7 +2,7 @@ import java.util.Random;
 
 public class Perceptron {
     private double[] weights;
-    private static final int DIMENSIONS = 26; // alfabet A-Z
+    protected static final int DIMENSIONS = 26; // alfabet A-Z
 
     public Perceptron() {
         Random random = new Random();
