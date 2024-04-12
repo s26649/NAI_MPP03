@@ -1,7 +1,6 @@
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class LanguageClassifier {
     private Map<String, Perceptron> perceptrons = new HashMap<>();
@@ -15,17 +14,22 @@ public class LanguageClassifier {
             if (folder.isDirectory()) {
                 String language = folder.getName();
                 File[] textFiles = folder.listFiles();
+                List<double[]> featureVectors = new ArrayList<>();
                 for (File file : textFiles) {
                     if (file.isFile() && file.getName().endsWith(".txt")) {
-                        train(language, file.getAbsolutePath());
+                        double[] features = TextProcessor.processText(file.getAbsolutePath());
+                        featureVectors.add(features);
+                        train(language, features);
                     }
                 }
+                System.out.println("Trening zakonczony dla jezyka " + language + " z wektorem proporcji:");
+                printAverageVector(featureVectors);
+                System.out.println();
             }
         }
     }
 
-    private void train(String language, String filePath) throws IOException {
-        double[] features = TextProcessor.processText(filePath);
+    private void train(String language, double[] features) {
         Perceptron perceptron = perceptrons.computeIfAbsent(language, k -> new Perceptron());
         for (Perceptron other : perceptrons.values()) {
             int expectedOutput = (other == perceptron) ? 1 : 0;
@@ -33,18 +37,60 @@ public class LanguageClassifier {
         }
     }
 
-    public String classify(String textPath) throws IOException {
+    public String classify(String textPath, boolean printDetails) throws IOException {
         double[] features = TextProcessor.processText(textPath);
+        double[] normalizedFeatures = normalizeVector(features);
         String bestLanguage = null;
         double maxActivation = Double.NEGATIVE_INFINITY;
+        double[] activations = new double[perceptrons.size()];
+        int index = 0;
 
         for (Map.Entry<String, Perceptron> entry : perceptrons.entrySet()) {
-            double activation = entry.getValue().activate(features);
-            if (activation > maxActivation) {
-                maxActivation = activation;
+            double[] normalizedWeights = normalizeVector(entry.getValue().getWeights());
+            double dotProduct = dotProduct(normalizedWeights, normalizedFeatures);
+            activations[index++] = dotProduct;
+            if (dotProduct > maxActivation) {
+                maxActivation = dotProduct;
                 bestLanguage = entry.getKey();
             }
         }
+
+        if (printDetails) {
+            System.out.println("Wyniki aktywacji: " + Arrays.toString(activations));
+        }
+
         return bestLanguage;
     }
+
+    private double[] normalizeVector(double[] vector) {
+        double length = Math.sqrt(Arrays.stream(vector).map(x -> x * x).sum());
+        return Arrays.stream(vector).map(x -> x / length).toArray();
+    }
+
+    private double dotProduct(double[] a, double[] b) {
+        double result = 0;
+        for (int i = 0; i < a.length; i++) {
+            result += a[i] * b[i];
+        }
+        return result;
+    }
+
+    private void printAverageVector(List<double[]> featureVectors) {
+        double[] average = new double[26];
+        for (double[] vector : featureVectors) {
+            for (int i = 0; i < vector.length; i++) {
+                average[i] += vector[i];
+            }
+        }
+        int n = featureVectors.size();
+        for (int i = 0; i < average.length; i++) {
+            average[i] /= n;
+        }
+        for (int i = 0; i < average.length; i++) {
+            char letter = (char) ('a' + i);
+            System.out.printf("%c: %.4f ", letter, average[i]);
+        }
+        System.out.println();
+    }
+
 }
