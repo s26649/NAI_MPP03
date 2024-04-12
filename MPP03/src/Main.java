@@ -20,12 +20,14 @@ public class Main {
                     System.out.println("Wprowadz sciezke do pliku:");
                     String filePath = scanner.nextLine();
                     String predictedLanguage = classifier.classify(filePath, true);
+                    System.out.println();
                     System.out.println("Przewidywany język: " + predictedLanguage);
                     break;
                 case "text":
                     System.out.println("Wpisz tekst oraz wcisnij enter gdy skonczysz:");
                     String text = scanner.nextLine();
                     predictedLanguage = classifyText(text);
+                    System.out.println();
                     System.out.println("Przewidywany język: " + predictedLanguage);
                     break;
                 default:

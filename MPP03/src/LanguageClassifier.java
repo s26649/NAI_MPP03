@@ -43,15 +43,16 @@ public class LanguageClassifier {
         String bestLanguage = null;
         double maxActivation = Double.NEGATIVE_INFINITY;
         double[] activations = new double[perceptrons.size()];
-        int index = 0;
+        List<String> languages = new ArrayList<>(perceptrons.keySet());
 
-        for (Map.Entry<String, Perceptron> entry : perceptrons.entrySet()) {
-            double[] normalizedWeights = normalizeVector(entry.getValue().getWeights());
+        for (int i = 0; i < languages.size(); i++) {
+            Perceptron perceptron = perceptrons.get(languages.get(i));
+            double[] normalizedWeights = normalizeVector(perceptron.getWeights());
             double dotProduct = dotProduct(normalizedWeights, normalizedFeatures);
-            activations[index++] = dotProduct;
+            activations[i] = dotProduct;
             if (dotProduct > maxActivation) {
                 maxActivation = dotProduct;
-                bestLanguage = entry.getKey();
+                bestLanguage = languages.get(i);
             }
         }
 
