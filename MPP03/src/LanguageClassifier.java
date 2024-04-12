@@ -1,20 +1,36 @@
+import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LanguageClassifier {
     private Map<String, Perceptron> perceptrons = new HashMap<>();
     private static final double LEARNING_RATE = 0.1;
 
-    public void train(String language, List<String> trainingPaths) throws IOException {
-        Perceptron perceptron = new Perceptron();
-        for (String path : trainingPaths) {
-            double[] features = TextProcessor.processText(path);
-            for (Map.Entry<String, Perceptron> entry : perceptrons.entrySet()) {
-                int expected = entry.getKey().equals(language) ? 1 : 0;
-                entry.getValue().learn(LEARNING_RATE, expected, entry.getValue().activate(features), features);
+    public void loadTrainingData(String dataDirectory) throws IOException {
+        File dir = new File(dataDirectory);
+        File[] languageFolders = dir.listFiles();
+
+        for (File folder : languageFolders) {
+            if (folder.isDirectory()) {
+                String language = folder.getName();
+                File[] textFiles = folder.listFiles();
+                for (File file : textFiles) {
+                    if (file.isFile() && file.getName().endsWith(".txt")) {
+                        train(language, file.getAbsolutePath());
+                    }
+                }
             }
         }
-        perceptrons.put(language, perceptron);
+    }
+
+    private void train(String language, String filePath) throws IOException {
+        double[] features = TextProcessor.processText(filePath);
+        Perceptron perceptron = perceptrons.computeIfAbsent(language, k -> new Perceptron());
+        for (Perceptron other : perceptrons.values()) {
+            int expectedOutput = (other == perceptron) ? 1 : 0;
+            other.learn(LEARNING_RATE, expectedOutput, other.activate(features), features);
+        }
     }
 
     public String classify(String textPath) throws IOException {
