@@ -1,49 +1,52 @@
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Scanner;
 
 public class Main {
-    private static LanguageClassifier classifier = new LanguageClassifier();
+    private static LanguageClassifier classifier;
 
-    public static void main(String[] args) throws IOException {
-        classifier.loadTrainingData("data");
+    static {
+        try {
+            classifier = new LanguageClassifier("data");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public static void main(String[] args){
         Scanner scanner = new Scanner(System.in);
+
         while (true) {
             System.out.println("Czy chcialbys podac sciezke do pliku czy wprowadzic samodzielnie tekst do klasyfikacji? (file/text/exit)");
             String choice = scanner.nextLine();
             if (choice.equals("exit")) break;
 
             switch (choice) {
-                case "file":
-                    System.out.println("Wprowadz sciezke do pliku:");
-                    String filePath = scanner.nextLine();
-                    String predictedLanguage = classifier.classify(filePath, true);
-                    System.out.println();
-                    System.out.println("Przewidywany język: " + predictedLanguage);
-                    break;
-                case "text":
-                    System.out.println("Wpisz tekst oraz wcisnij enter gdy skonczysz:");
-                    String text = scanner.nextLine();
-                    predictedLanguage = classifyText(text);
-                    System.out.println();
-                    System.out.println("Przewidywany język: " + predictedLanguage);
-                    break;
-                default:
-                    System.out.println("Nieprawidlowa opcja. Wpisz 'file', 'text', lub 'exit'.");
+                case "file" -> handleFileInput(scanner);
+                case "text" -> handleTextInput(scanner);
+                default -> System.out.println("Nieprawidlowa opcja. Wpisz 'file', 'text', lub 'exit'.");
             }
         }
         scanner.close();
     }
 
-    private static String classifyText(String text) throws IOException {
-        File tempFile = File.createTempFile("temp", ".txt");
-        try (FileWriter writer = new FileWriter(tempFile)) {
-            writer.write(text);
+    private static void handleFileInput(Scanner scanner) {
+        System.out.println("Wprowadz sciezke do pliku:");
+        String filePath = scanner.nextLine();
+        try {
+            String text = Files.readString(Path.of(filePath));
+            String predictedLanguage = classifier.classify(text);
+            System.out.println("\nPrzewidywany język: " + predictedLanguage);
+        } catch (IOException e) {
+            System.out.println("Nie można odczytać pliku. Upewnij się, że ścieżka jest poprawna.");
         }
-        String result = classifier.classify(tempFile.getAbsolutePath(), true);
-        tempFile.delete();
-        return result;
+    }
+
+    private static void handleTextInput(Scanner scanner) {
+        System.out.println("Wpisz tekst oraz wcisnij enter gdy skonczysz:");
+        String text = scanner.nextLine();
+        String predictedLanguage = classifier.classify(text);
+        System.out.println("\nPrzewidywany jezyk: " + predictedLanguage);
     }
 }
