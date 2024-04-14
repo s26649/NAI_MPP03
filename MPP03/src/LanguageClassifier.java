@@ -2,12 +2,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class LanguageClassifier {
     private final Perceptron[] perceptrons;
     private static final double LEARNING_RATE = 0.1;
+    private static final double SATISFACTORY_ACCURACY = 0.9;
 
     public LanguageClassifier(String trainingDataDir) throws IOException {
         String[] labels = fetchLabels(trainingDataDir);
@@ -34,6 +34,7 @@ public class LanguageClassifier {
     public void loadTrainingData(String dataDirectory) throws IOException {
         File dir = new File(dataDirectory);
         File[] languageFolders = dir.listFiles();
+        List<String[]> trainingData = new ArrayList<>();
 
         if (languageFolders != null) {
             for (File folder : languageFolders) {
@@ -43,7 +44,6 @@ public class LanguageClassifier {
                     if (perceptron == null) {
                         continue;
                     }
-                    List<String[]> trainingData = new ArrayList<>();
                     File[] textFiles = folder.listFiles();
                     if (textFiles != null) {
                         for (File file : textFiles) {
@@ -91,7 +91,7 @@ public class LanguageClassifier {
                 }
             }
             double currentAccuracy = (double) correct / (trainingData.size() * perceptrons.length);
-            if (currentAccuracy <= previousAccuracy || previousAccuracy - currentAccuracy < 0.01) {
+            if (currentAccuracy >= SATISFACTORY_ACCURACY) {
                 improved = false;
             }
             previousAccuracy = currentAccuracy;
