@@ -21,12 +21,12 @@ public class LanguageClassifier {
     private String[] fetchLabels(String trainingDataDir) {
         try {
             File dir = new File(trainingDataDir);
-            return Arrays.stream(dir.listFiles(File::isDirectory))
+            return Arrays.stream(Objects.requireNonNull(dir.listFiles(File::isDirectory)))
                     .map(File::getName)
                     .filter(name -> !name.equals(dir.getName()))
                     .toArray(String[]::new);
         } catch (Exception e) {
-            throw new RuntimeException("error podczas wczytywania dirow", e);
+            throw new RuntimeException("Error podczas wczytywania dirow", e);
         }
     }
 
@@ -97,9 +97,9 @@ public class LanguageClassifier {
             previousAccuracy = currentAccuracy;
             iterationCount++;
         }
-        System.out.println("trening zakonczony dla jezyka: " + language);
-        System.out.println("liczba iteracji: " + iterationCount);
-        System.out.println("accuracy: " + previousAccuracy * 100 + "%");
+        System.out.println("Trening zakonczony dla jezyka: " + language);
+        System.out.println("Liczba iteracji: " + iterationCount);
+        System.out.println("Accuracy: " + previousAccuracy * 100 + "%");
     }
 
     public String classify(String text) {
@@ -116,9 +116,9 @@ public class LanguageClassifier {
             }
         }
 
-        System.out.print("wektor: (");
+        System.out.print("Wektor aktywacji: (");
         for (int i = 0; i < outputs.length; i++) {
-            System.out.printf("%.2f", outputs[i]);
+            System.out.printf("%s: %.2f", perceptrons[i].getLanguage(), outputs[i]);
             if (i < outputs.length - 1) System.out.print(", ");
         }
         System.out.println(")");
@@ -127,7 +127,7 @@ public class LanguageClassifier {
     }
 
     private void printAverageVector(List<String[]> trainingData, String language) {
-        System.out.println("wektor proporcji dla jezyka: " + language);
+        System.out.println("Wektor proporcji dla jezyka: " + language);
         double[] average = new double[Perceptron.DIMENSIONS];
         int count = 0;
         for (String[] data : trainingData) {
