@@ -9,8 +9,8 @@ public class LanguageClassifier {
     private static final double LEARNING_RATE = 0.1;
     private static final double SATISFACTORY_ACCURACY = 0.9;
 
-    public LanguageClassifier(String trainingDataDir) throws IOException {
-        String[] labels = fetchLabels(trainingDataDir);
+    public LanguageClassifier(String trainingDataDir) throws IOException { // pobiera etykiety z jezykami, tworzy tablice (warstwe) perceptronow, inicjalizije perceptrony dla kazdego z jezykow, wczytuje dane treningowe
+        String[] labels = getLabels(trainingDataDir);
         perceptrons = new Perceptron[labels.length];
         for (int i = 0; i < labels.length; i++) {
             perceptrons[i] = new Perceptron(labels[i]);
@@ -18,7 +18,7 @@ public class LanguageClassifier {
         loadTrainingData(trainingDataDir);
     }
 
-    private String[] fetchLabels(String trainingDataDir) {
+    private String[] getLabels(String trainingDataDir) { // otwiera katalog z danymi, filtruje subkatalogi reprezentujace jezyki i zwraca ich nazwy
         try {
             File dir = new File(trainingDataDir);
             return Arrays.stream(Objects.requireNonNull(dir.listFiles(File::isDirectory)))
@@ -30,8 +30,7 @@ public class LanguageClassifier {
         }
     }
 
-
-    public void loadTrainingData(String dataDirectory) throws IOException {
+    public void loadTrainingData(String dataDirectory) throws IOException { // wczytuje dane treningowe, trenuje perceptrony dla każdego języka, wypisuje wektory proporcji
         File dir = new File(dataDirectory);
         File[] languageFolders = dir.listFiles();
         List<String[]> trainingData = new ArrayList<>();
@@ -54,7 +53,7 @@ public class LanguageClassifier {
                         }
                     }
                     train(trainingData, language);
-                    printAverageVector(trainingData, language);
+                    printAverageVector(trainingData);
                 }
             }
         }
@@ -73,7 +72,7 @@ public class LanguageClassifier {
         return new String(Files.readAllBytes(path));
     }
 
-    private void train(List<String[]> trainingData, String language) {
+    private void train(List<String[]> trainingData, String language) { // uczy perceptrony dostosowując ich wagi do momentu gdy dokładność klasyfikacji przekroczy ustalony próg satysfakcji, wypisuje liczbe iteracji i accuracy treningu
         Collections.shuffle(trainingData);
         boolean improved = true;
         double previousAccuracy = 0.0;
@@ -91,7 +90,7 @@ public class LanguageClassifier {
                 }
             }
             double currentAccuracy = (double) correct / (trainingData.size() * perceptrons.length);
-            if (currentAccuracy >= SATISFACTORY_ACCURACY) {
+            if (currentAccuracy > SATISFACTORY_ACCURACY) {
                 improved = false;
             }
             previousAccuracy = currentAccuracy;
@@ -102,7 +101,7 @@ public class LanguageClassifier {
         System.out.println("Accuracy: " + previousAccuracy * 100 + "%");
     }
 
-    public String classify(String text) {
+    public String classify(String text) { // przypisuje tekstowi najbardziej prawdopodobny język na podstawie odpowiedzi perceptronów, wyświetla wektor aktywacji
         double[] proportions = TextProcessor.calculateProportions(text);
         double[] outputs = new double[perceptrons.length];
         String bestLanguage = null;
@@ -126,8 +125,8 @@ public class LanguageClassifier {
         return bestLanguage != null ? bestLanguage : "nie wiem";
     }
 
-    private void printAverageVector(List<String[]> trainingData, String language) {
-        System.out.println("Wektor proporcji dla jezyka: " + language);
+    private void printAverageVector(List<String[]> trainingData) { // drukuje wektor proporcji
+        System.out.println("Wektor proporcji: ");
         double[] average = new double[Perceptron.DIMENSIONS];
         int count = 0;
         for (String[] data : trainingData) {
