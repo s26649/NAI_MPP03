@@ -7,7 +7,7 @@ import java.util.*;
 public class LanguageClassifier {
     private final Perceptron[] perceptrons;
     private static final double LEARNING_RATE = 0.1;
-    private static final double SATISFACTORY_ACCURACY = 0.95;
+    private static final double SATISFACTORY_ACCURACY = 0.9;
 
     public LanguageClassifier(String trainingDataDir) throws IOException { // pobiera etykiety z jezykami, tworzy tablice (warstwe) perceptronow, inicjalizije perceptrony dla kazdego z jezykow, wczytuje dane treningowe
         String[] labels = getLabels(trainingDataDir);
@@ -142,5 +142,102 @@ public class LanguageClassifier {
             System.out.printf("%c: %.4f ", letter, average[i]);
         }
         System.out.println("\n");
+    }
+}
+import java.util.Arrays;
+
+public class TextProcessor {
+
+    public static double[] calculateProportions(String text) {
+        text = text.toUpperCase().replaceAll("[^A-Z]", "");
+        double[] proportions = new double[Perceptron.DIMENSIONS];
+
+        for (char c : text.toCharArray()) {
+            int index = c - 'A';
+            if (index >= 0 && index < Perceptron.DIMENSIONS) {
+                proportions[index]++;
+            }
+        }
+
+        double total = Arrays.stream(proportions).sum();
+        for (int i = 0; i < proportions.length; i++) {
+            proportions[i] /= total;
+        }
+        return proportions;
+    }
+}
+import java.util.Random;
+
+public class Perceptron {
+    private final double[] weights;
+    private double bias;
+    private final String language;
+
+    protected static final int DIMENSIONS = 26; // alfabet A-Z
+
+    public Perceptron(String language) {
+        this.language = language;
+        Random random = new Random();
+        this.weights = new double[DIMENSIONS];
+        for (int i = 0; i < weights.length; i++) {
+            weights[i] = random.nextDouble();
+        }
+        bias = random.nextDouble() + 0.1; // wartosc losowa z zakresu (0 , 1)
+    }
+
+    public double activate(double[] inputs) {
+        double sum = - bias;
+        for (int i = 0; i < DIMENSIONS; i++) {
+            sum += weights[i] * inputs[i];
+        }
+        return sum;
+    }
+
+    public void learn(double learningRate, int actual, int prediction, double[] input) {
+        int error = actual - prediction;
+        for (int i = 0; i < weights.length; i++) {
+            weights[i] += error * learningRate * input[i]; // w' = w - (d - y) * stala uczenia * wektor wejsciowy
+        }
+        bias -= error * learningRate;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+}
+import java.io.IOException;
+import java.util.Scanner;
+
+public class Main {
+    private static LanguageClassifier classifier;
+
+    static {
+        try {
+            classifier = new LanguageClassifier("data");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args){
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("Czy chcialbys wprowadzic samodzielnie tekst do klasyfikacji czy wyjsc z programu? (text/exit)");
+            String choice = scanner.nextLine();
+            if (choice.equals("exit"))
+                break;
+            else if (choice.equals("text"))
+                handleTextInput(scanner);
+            else System.out.println("Nieprawidlowa opcja. Wpisz 'file', 'text', lub 'exit'.");
+        }
+        scanner.close();
+    }
+
+    private static void handleTextInput(Scanner scanner) {
+        System.out.println("Wpisz tekst oraz wcisnij enter gdy skonczysz:");
+        String text = scanner.nextLine();
+        String predictedLanguage = classifier.classify(text);
+        System.out.println("\nPrzewidywany jezyk: " + predictedLanguage);
     }
 }
